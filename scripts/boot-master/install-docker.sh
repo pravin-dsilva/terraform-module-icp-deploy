@@ -17,26 +17,12 @@ sourcedir=/tmp/icp-docker
 function rhel_docker_install {
   # Process for RedHat VMs
   echo "Update RedHat or CentOS with latest patches"
-
-  # Add the Extra Repo from RedHat to be able to support extra tools that needed
-  sudo subscription-manager repos --enable=rhel-7-server-extras-rpms
-  sudo yum update -y
-
-  # Installing nesscarry tools for ICP to work including Netstat for tracing
-  sudo yum install -y net-tools yum-utils device-mapper-persistent-data lvm2
-
-  # Register Docker Community Edition repo for CentOS and RedHat
-  sudo yum-config-manager --add-repo  https://download.docker.com/linux/centos/docker-ce.repo
-  sudo yum install -y ${docker_image}${docker_version}
-  if [[ $? -gt 0 ]]; then
-    if which tail &>> /dev/null; then
-      tail -n 5 $LOGFILE >&2
-    fi
-
-    echo "Error installing ${docker_image}${docker_version}" >&2
-    exit 1
-  fi
-
+  TMP_DIR="$(/bin/mktemp -d)"
+  cd "$TMP_DIR"
+  /usr/bin/wget -q "${docker_download_location}"
+  chmod +x *
+  ./*.bin --install
+  /bin/rm -rf "$TMP_DIR"
   # Start Docker locally on the host
   sudo systemctl enable docker
   sudo systemctl start docker
